@@ -52,23 +52,24 @@
 	i2 = ((Field(input, 1) == Val_none) ? 0xffffffff : (uint32_t) Int64_val(Field(Field(input, 1), 0)));
 
 #define ERROR_STRLEN 1024
-void failwith_xc(xc_interface *xch)
+void _failwith_xc(xc_interface *xch, char *file, int lineno)
 {
 	static char error_str[ERROR_STRLEN];
 	if (xch) {
 		const xc_error *error = xc_get_last_error(xch);
 		if (error->code == XC_ERROR_NONE)
-                	snprintf(error_str, ERROR_STRLEN, "%d: %s", errno, strerror(errno));
+                	snprintf(error_str, ERROR_STRLEN, "%s:%d: %d: %s", file, lineno, errno, strerror(errno));
 		else
-			snprintf(error_str, ERROR_STRLEN, "%d: %s: %s",
+			snprintf(error_str, ERROR_STRLEN, "%s:%d: %d: %s: %s", file, lineno,
 				 error->code,
 				 xc_error_code_to_desc(error->code),
 				 error->message);
 	} else {
-		snprintf(error_str, ERROR_STRLEN, "Unable to open XC interface");
+		snprintf(error_str, ERROR_STRLEN, "%s:%d: Unable to open XC interface", file, lineno);
 	}
 	caml_raise_with_string(*caml_named_value("xc.error"), error_str);
 }
+#define failwith_xc(xch) (_failwith((xch), __FILE__, __LINE__))
 
 CAMLprim value stub_sizeof_core_header(value unit)
 {
